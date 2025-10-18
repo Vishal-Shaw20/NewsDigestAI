@@ -1,3 +1,12 @@
+# IDE configuration folder
 .idea/
 
+# Python bytecode cache folder
 __pycache__/
+
+# Environment variables file (API keys, secrets)
+.env
+
+# Data folder (raw or backup data, usually large or sensitive)
+data/*
+!data/.gitkeep
