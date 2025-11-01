@@ -8,7 +8,7 @@ API_KEY = os.getenv("NEWS_API_KEY")
 
 BASE_URL = "https://gnews.io/api/v4/top-headlines"
 
-def fetch_top_headlines(query = 'Technology', language = 'en', max_results = 10):
+def fetch_top_headlines(query = '', language = 'en', max_results = 10):
     params = {
         'q' : query,
         'lang' : language,
@@ -19,11 +19,3 @@ def fetch_top_headlines(query = 'Technology', language = 'en', max_results = 10)
     data = response.json()
     article = data.get('articles', [])
     return article
-
-def save_articles(articles, filename='../data/raw_news.csv'):
-    df = pd.DataFrame(articles)
-    df.to_csv(filename, index=False)
-    print(f'✅ Saved {len(df)} articles to {filename}')
-
-articles = fetch_top_headlines(max_results=10)
-save_articles(articles)

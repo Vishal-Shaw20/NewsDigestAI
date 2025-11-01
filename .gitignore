@@ -9,4 +9,6 @@ __pycache__/
 
 # Data folder (raw or backup data, usually large or sensitive)
 data/*
-!data/.gitkeep
+
+# Ignore the large TF model file
+t5-small-finetuned-news/tf_model.h5
