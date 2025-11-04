@@ -12,3 +12,6 @@ data/*
 
 # Ignore the large TF model file
 t5-small-finetuned-news/tf_model.h5
+
+# Ignore Jupyter notebooks folder
+notebooks/
