@@ -10,8 +10,8 @@ __pycache__/
 # Data folder (raw or backup data, usually large or sensitive)
 data/*
 
-# Ignore the large TF model file
-t5-small-finetuned-news/tf_model.h5
+# Ignore the large model folder
+model/
 
 # Ignore Jupyter notebooks folder
 notebooks/
