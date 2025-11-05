@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsDigest AI</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="/static/style.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend:{
+                    fontFamily:{
+                        sans: ['Inter','sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-200 font-sans antialiased flex flex-col min-h-screen">
+
+    <!-- === SECTION 1: HEADER === -->
+    <header class="bg-gradient-to-r from-white via-blue-50 to-white shadow-sm">
+        <nav class="container mx-auto px-6 py-4">
+            <h1 class="font-bold text-3xl text-gray-800">NewsDigest AI</h1>
+            <p class="text-gray-600">Your Real-Time News Summarizer</p>
+        </nav>
+    </header>
+
+    <!-- === SECTION 2: CONTROLS === -->
+    <main class="container mx-auto px-6 pt-6 pb-12 flex-grow">
+        <!-- Hero Section -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2 drop-shadow-sm">
+                Real-Time AI News Summaries
+            </h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Search any topic — get fresh articles + concise AI summaries in seconds.
+            </p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+
+                <!-- Topic Input -->
+                <div>
+                    <label for="topic-input" class=" pl-1 block text-sm font-medium text-gray-600">Topic</label>
+                    <input type="text" id="topic-input" placeholder="Technology" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                </div>
+
+                <!-- Max Results Input -->
+                <div>
+                    <label for="max-results-input" class="pl-1 block text-sm font-medium text-gray-600">Results</label>
+                    <input type="number" id="max-results-input" placeholder="10" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                </div>
+
+                <!-- The Button -->
+                <div>
+                    <button id="fetch-button" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-2.5 px-4 rounded-xl shadow-lg hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] transition flex items-center justify-center gap-2">
+                        <!-- Search Icon SVG (TYPO FIXED) -->
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="white">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                        Fetch & Summarize
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- === SECTION 3: STATUS AREA === -->
+        <div id="status-container" class="text-center my-8" style="min-height: 40px;">
+            <!-- The Error Message (hidden by default) -->
+            <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md">
+                <!--Error Message-->
+            </div>
+        </div>
+
+        <div id="skeleton-loader-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto hidden">
+            <!-- Repeat skeleton cards -->
+            <div class="animate-pulse bg-white rounded-lg shadow-md p-6">
+                <div class="h-6 bg-gray-300 rounded w-3/4 mb-3"></div>
+                <div class="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+                <div class="h-4 bg-gray-300 rounded w-full mb-2"></div>
+                <div class="h-4 bg-gray-300 rounded w-5/6"></div>
+                <div class="h-48 bg-gray-300 rounded mt-4"></div>
+            </div>
+            <div class="animate-pulse bg-white rounded-lg shadow-md p-6">
+                <div class="h-6 bg-gray-300 rounded w-3/4 mb-3"></div>
+                <div class="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+                <div class="h-4 bg-gray-300 rounded w-full mb-2"></div>
+                <div class="h-4 bg-gray-300 rounded w-5/6"></div>
+                <div class="h-48 bg-gray-300 rounded mt-4"></div>
+            </div>
+            <div class="animate-pulse bg-white rounded-lg shadow-md p-6">
+                <div class="h-6 bg-gray-300 rounded w-3/4 mb-3"></div>
+                <div class="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+                <div class="h-4 bg-gray-300 rounded w-full mb-2"></div>
+                <div class="h-4 bg-gray-300 rounded w-5/6"></div>
+                <div class="h-48 bg-gray-300 rounded mt-4"></div>
+            </div>
+        </div>
+
+        <!-- === SECTION 4: ARTICLE LIST === -->
+        <div id="article-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto">
+            <!-- Article cards will be dynamically inserted here by JavaScript -->
+        </div>
+    </main>
+
+    <!-- === SECTION 5: FOOTER (NEW) === -->
+    <footer class="bg-gray-800 text-gray-400 py-8 mt-20">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-sm tracking-wide">&copy; 2025 <span class="font-semibold text-white">NewsDigest AI</span> • Built by Vishal Shaw</p>
+        </div>
+    </footer>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

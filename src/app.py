@@ -1,18 +1,22 @@
 import tensorflow as tf
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from transformers import TFAutoModelForSeq2SeqLM, AutoTokenizer
 import logging
-from fetch_news import fetch_top_headlines
+from src.fetch_news import fetch_top_headlines
 
 # Set up logging so you can see what's happening
 logging.basicConfig(level=logging.INFO)
 
 # --- 1. Initialize the Flask App ---
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', template_folder='templates')
+
+
 
 # --- 2. Load Your Fine-Tuned Model ---
 # This is the path to the folder you unzipped
-MODEL_NAME = "../t5-small-finetuned-news"
+MODEL_NAME = "VishalShaw/t5-small-finetuned-news"
+
+
 
 logging.info("Loading model and tokenizer...")
 try:
@@ -23,6 +27,8 @@ except Exception as e:
     logging.error(f"Error loading model: {e}")
     # If the app can't load the model, there's no point in running.
     raise e
+
+
 
 # --- 3. Create the Summary Generation Function ---
 def generate_summary(text_to_summarize):
@@ -57,7 +63,19 @@ def generate_summary(text_to_summarize):
     logging.info("Summary generation complete.")
     return summary
 
+
+
 # --- 4. Define the API Endpoint ---
+@app.route("/")
+def home():
+    """
+    Serves the main index.html file.
+    """
+    return render_template("index.html")
+
+
+
+# --- 5. Define the API Endpoint ---
 @app.route("/get-summarized-news", methods=["GET"])
 def summarize_endpoint():
     """
@@ -75,7 +93,7 @@ def summarize_endpoint():
         return jsonify({'error': 'No text found!!'}), 404
 
     texts = [
-        f'{article['title']}. {article['description']}' for article in articles
+        f"{article['title']}. {article['description']}" for article in articles
     ]
 
     try:
@@ -90,7 +108,7 @@ def summarize_endpoint():
         return jsonify({'error': 'Failed to process news!!'}), 500
 
 
-# --- 5. Run the App ---
+# --- 6. Run the App ---
 if __name__ == "__main__":
     # You can set debug=True for development, but set to False for production
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', port=5000)
