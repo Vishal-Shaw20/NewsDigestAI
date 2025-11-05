@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify, render_template
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 import logging
 from src.fetch_news import fetch_top_headlines
+import torch
+torch.set_num_threads(1)
+
 
 # Set up logging so you can see what's happening
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +23,11 @@ MODEL_NAME = "VishalShaw/t5-small-finetuned-news"
 logging.info("Loading model and tokenizer...")
 try:
     tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
-    model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
+    model = T5ForConditionalGeneration.from_pretrained(
+        MODEL_NAME,
+        torch_dtype="auto",
+        low_cpu_mem_usage=True
+    )
     logging.info(f"Successfully loaded fine-tuned model from '{MODEL_NAME}'")
 except Exception as e:
     logging.error(f"Error loading model: {e}")
@@ -41,7 +48,7 @@ def generate_summary(text_to_summarize):
 
     inputs = tokenizer(
         input_text,
-        return_tensors='tf',
+        return_tensors='pt',
         max_length=512,
         truncation=True,
         padding=True
