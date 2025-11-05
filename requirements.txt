@@ -13,3 +13,4 @@ beautifulsoup4==4.13.0
 lxml==5.3.0
 newspaper3k==0.2.8
 tqdm==4.67.1
+sentencepiece==0.1.99
