@@ -1,4 +1,3 @@
-import tensorflow as tf
 from flask import Flask, request, jsonify, render_template
 from transformers import TFAutoModelForSeq2SeqLM, AutoTokenizer
 import logging
