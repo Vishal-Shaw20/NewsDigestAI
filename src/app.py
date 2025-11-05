@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from transformers import TFAutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import T5ForConditionalGeneration, T5Tokenizer
 import logging
 from src.fetch_news import fetch_top_headlines
 
@@ -19,8 +19,8 @@ MODEL_NAME = "VishalShaw/t5-small-finetuned-news"
 
 logging.info("Loading model and tokenizer...")
 try:
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = TFAutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+    tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
+    model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
     logging.info(f"Successfully loaded fine-tuned model from '{MODEL_NAME}'")
 except Exception as e:
     logging.error(f"Error loading model: {e}")
