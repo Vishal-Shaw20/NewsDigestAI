@@ -23,7 +23,7 @@ MODEL_NAME = "VishalShaw/t5-small-finetuned-news"
 logging.info("Loading model and tokenizer...")
 try:
     tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
-    model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
+    model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME, from_tf=True)
     logging.info(f"Successfully loaded fine-tuned model from '{MODEL_NAME}'")
 except Exception as e:
     logging.error(f"Error loading model: {e}")
