@@ -3,8 +3,6 @@ from transformers import T5ForConditionalGeneration, T5Tokenizer
 import logging
 from src.fetch_news import fetch_top_headlines
 import torch
-import os  # <-- Import os
-
 # Set threads for CPU-only environment
 torch.set_num_threads(1)
 

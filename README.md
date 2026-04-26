@@ -66,7 +66,7 @@ conda activate NewsDigestAI
 3. Add your API key:
    Create a .env file in the project root (NewsDigestAI/) and add your API key:
 ```
-GNEWS_API_KEY=your_gnews_api_key_here
+NEWS_API_KEY=your_gnews_api_key_here
 ```
 4. Run the application:
 ```bash

@@ -41,6 +41,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function escapeHTML(str) {
+        const div = document.createElement("div");
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
     function displayArticles(articles) {
         articleListContainer.innerHTML = "";
 
@@ -50,18 +56,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         articles.forEach((article, index) => {
+            const title = escapeHTML(article.title || "");
+            const sourceName = escapeHTML(article.source?.name || "");
+            const summary = escapeHTML(article.summary || "");
+            const url = encodeURI(article.url || "");
+            const image = encodeURI(article.image || "");
+
             const articleCardHTML = `
             <div class="article-card bg-white rounded-lg shadow-md overflow-hidden transform transition-transform hover:scale-105" style="animation-delay: ${index * 0.1}s">
-                <a href="${article.url}" target="_blank" rel="noopener noreferrer">
-                    <img class="w-full object-cover h-48" src="${article.image}" alt="Article Image" onerror="this.style.display='none'">
+                <a href="${url}" target="_blank" rel="noopener noreferrer">
+                    <img class="w-full object-cover h-48" src="${image}" alt="Article Image" onerror="this.style.display='none'">
                 </a>
                 <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-2">${article.title}</h3>
-                    <p class="text-gray-600 text-sm mb-1">${article.source.name}</p>
+                    <h3 class="text-xl font-semibold mb-2">${title}</h3>
+                    <p class="text-gray-600 text-sm mb-1">${sourceName}</p>
                     <p class="text-gray-700 text-base mb-4">
-                        <strong>Summary:</strong> ${article.summary}
+                        <strong>Summary:</strong> ${summary}
                     </p>
-                    <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 font-medium mt-4 inline-block">
+                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 font-medium mt-4 inline-block">
                         Read Full Article &rarr;
                     </a>
                 </div>
