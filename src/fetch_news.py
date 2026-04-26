@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+import logging
 import os
 import requests
 
@@ -14,7 +15,11 @@ def fetch_top_headlines(query = '', language = 'en', max_results = 10):
         'max' : max_results,
         'token' : API_KEY
     }
-    response = requests.get(BASE_URL, params=params)
-    data = response.json()
-    article = data.get('articles', [])
-    return article
+    try:
+        response = requests.get(BASE_URL, params=params)
+        response.raise_for_status()
+        data = response.json()
+        return data.get('articles', [])
+    except requests.RequestException as e:
+        logging.error(f"GNews API error: {e}")
+        return []

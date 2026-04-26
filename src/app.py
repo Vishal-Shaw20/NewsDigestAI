@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, render_template
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import requests
@@ -12,35 +13,34 @@ HF_API_TOKEN = os.getenv("HF_API_TOKEN")
 HF_MODEL_URL = "https://api-inference.huggingface.co/models/VishalShaw/t5-small-finetuned-news"
 
 
-def generate_summary(texts):
+def _summarize_one(text):
     headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
-    summaries = []
-
-    for text in texts:
-        payload = {
-            "inputs": f"summarize: {text}",
-            "parameters": {
-                "max_length": 80,
-                "min_length": 30,
-                "num_beams": 4,
-                "no_repeat_ngram_size": 2,
-            },
-            "options": {"wait_for_model": True},
-        }
+    payload = {
+        "inputs": f"summarize: {text}",
+        "parameters": {
+            "max_length": 80,
+            "min_length": 30,
+            "num_beams": 4,
+            "no_repeat_ngram_size": 2,
+        },
+        "options": {"wait_for_model": True},
+    }
+    try:
         response = requests.post(HF_MODEL_URL, headers=headers, json=payload)
-
         if response.status_code != 200:
             logging.error(f"HF API error: {response.status_code} {response.text}")
-            summaries.append("Summary unavailable.")
-            continue
-
+            return "Summary unavailable."
         result = response.json()
         if isinstance(result, list) and len(result) > 0:
-            summaries.append(result[0].get("summary_text", "Summary unavailable."))
-        else:
-            summaries.append("Summary unavailable.")
+            return result[0].get("summary_text", "Summary unavailable.")
+    except Exception as e:
+        logging.error(f"HF API request failed: {e}")
+    return "Summary unavailable."
 
-    return summaries
+
+def generate_summary(texts):
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        return list(executor.map(_summarize_one, texts))
 
 
 @app.route("/")
@@ -53,6 +53,7 @@ def summarize_endpoint():
     topic = request.args.get("topic", "")
     language = request.args.get("language", "en")
     max_results = request.args.get("max_results", 10, type=int)
+    max_results = max(1, min(10, max_results))
 
     articles = fetch_top_headlines(topic, language, max_results)
 
