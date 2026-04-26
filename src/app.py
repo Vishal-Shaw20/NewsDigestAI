@@ -13,13 +13,21 @@ HF_API_TOKEN = os.getenv("HF_API_TOKEN")
 HF_MODEL_URL = "https://api-inference.huggingface.co/models/VishalShaw/t5-small-finetuned-news"
 
 
-def _summarize_one(text):
+SUMMARY_LENGTH_MAP = {
+    "short": {"max_length": 40, "min_length": 15},
+    "medium": {"max_length": 80, "min_length": 30},
+    "long": {"max_length": 150, "min_length": 50},
+}
+
+
+def _summarize_one(args):
+    text, length_params = args
     headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
     payload = {
         "inputs": f"summarize: {text}",
         "parameters": {
-            "max_length": 80,
-            "min_length": 30,
+            "max_length": length_params["max_length"],
+            "min_length": length_params["min_length"],
             "num_beams": 4,
             "no_repeat_ngram_size": 2,
         },
@@ -38,9 +46,11 @@ def _summarize_one(text):
     return "Summary unavailable."
 
 
-def generate_summary(texts):
+def generate_summary(texts, summary_length="medium"):
+    length_params = SUMMARY_LENGTH_MAP.get(summary_length, SUMMARY_LENGTH_MAP["medium"])
+    args = [(text, length_params) for text in texts]
     with ThreadPoolExecutor(max_workers=5) as executor:
-        return list(executor.map(_summarize_one, texts))
+        return list(executor.map(_summarize_one, args))
 
 
 @app.route("/")
@@ -54,6 +64,9 @@ def summarize_endpoint():
     language = request.args.get("language", "en")
     max_results = request.args.get("max_results", 10, type=int)
     max_results = max(1, min(10, max_results))
+    summary_length = request.args.get("summary_length", "medium")
+    if summary_length not in SUMMARY_LENGTH_MAP:
+        summary_length = "medium"
 
     articles = fetch_top_headlines(topic, language, max_results)
 
@@ -65,7 +78,7 @@ def summarize_endpoint():
     ]
 
     try:
-        summaries = generate_summary(texts)
+        summaries = generate_summary(texts, summary_length)
         output_data = []
         for i, article in enumerate(articles):
             article['summary'] = summaries[i]
