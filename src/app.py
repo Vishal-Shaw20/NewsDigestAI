@@ -39,8 +39,9 @@ def _summarize_one(args):
             logging.error(f"HF API error: {response.status_code} {response.text}")
             return "Summary unavailable."
         result = response.json()
+        logging.info(f"HF API response: {result}")
         if isinstance(result, list) and len(result) > 0:
-            return result[0].get("summary_text", "Summary unavailable.")
+            return result[0].get("summary_text") or result[0].get("generated_text") or "Summary unavailable."
     except Exception as e:
         logging.error(f"HF API request failed: {e}")
     return "Summary unavailable."
