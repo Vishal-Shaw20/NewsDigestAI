@@ -311,11 +311,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const bookmarked = isBookmarked(article.url);
 
             const articleCardHTML = `
-            <div class="article-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform transition-transform hover:scale-105" style="animation-delay: ${index * 0.1}s">
+            <div class="article-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform transition-transform hover:scale-105 flex flex-col" style="animation-delay: ${index * 0.1}s">
                 <a href="${url}" target="_blank" rel="noopener noreferrer">
                     <img class="w-full object-cover h-48" src="${image}" alt="Article Image" onerror="this.style.display='none'">
                 </a>
-                <div class="p-6">
+                <div class="p-6 flex flex-col flex-grow">
                     <div class="flex items-start justify-between gap-2">
                         <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">${title}</h3>
                         <button class="bookmark-btn flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" data-index="${index}" aria-label="Bookmark">
@@ -336,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <strong>Original:</strong> ${description}
                         </p>
                     </div>
-                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium mt-4 inline-block">
+                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium mt-auto pt-4 inline-block">
                         Read Full Article &rarr;
                     </a>
                 </div>

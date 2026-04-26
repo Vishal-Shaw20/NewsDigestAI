@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, render_template
-from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import requests
@@ -11,7 +10,7 @@ app = Flask(__name__, static_folder='static', template_folder='templates')
 
 HF_SPACE_URL = os.getenv(
     "HF_SPACE_URL",
-    "https://vishalshaw-t5-news-summarizer.hf.space/summarize",
+    "https://vishalshaw-t5-news-summarizer.hf.space",
 )
 
 
@@ -22,32 +21,26 @@ SUMMARY_LENGTH_MAP = {
 }
 
 
-def _summarize_one(args):
-    text, length_params = args
+def generate_summary(texts, summary_length="medium"):
+    length_params = SUMMARY_LENGTH_MAP.get(summary_length, SUMMARY_LENGTH_MAP["medium"])
     payload = {
-        "text": text,
+        "texts": texts,
         "max_length": length_params["max_length"],
         "min_length": length_params["min_length"],
         "num_beams": 4,
         "no_repeat_ngram_size": 2,
     }
     try:
-        response = requests.post(HF_SPACE_URL, json=payload, timeout=300)
+        response = requests.post(
+            f"{HF_SPACE_URL}/batch-summarize", json=payload, timeout=300
+        )
         if response.status_code != 200:
             logging.error(f"Space API error: {response.status_code} {response.text}")
-            return "Summary unavailable."
-        result = response.json()
-        return result.get("summary_text", "Summary unavailable.")
+            return ["Summary unavailable."] * len(texts)
+        return response.json().get("summaries", ["Summary unavailable."] * len(texts))
     except Exception as e:
         logging.error(f"Space API request failed: {e}")
-    return "Summary unavailable."
-
-
-def generate_summary(texts, summary_length="medium"):
-    length_params = SUMMARY_LENGTH_MAP.get(summary_length, SUMMARY_LENGTH_MAP["medium"])
-    args = [(text, length_params) for text in texts]
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        return list(executor.map(_summarize_one, args))
+    return ["Summary unavailable."] * len(texts)
 
 
 @app.route("/")
