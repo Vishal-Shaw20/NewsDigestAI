@@ -9,8 +9,10 @@ logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")
-HF_MODEL_URL = "https://api-inference.huggingface.co/models/VishalShaw/t5-small-finetuned-news"
+HF_SPACE_URL = os.getenv(
+    "HF_SPACE_URL",
+    "https://vishalshaw-t5-news-summarizer.hf.space/summarize",
+)
 
 
 SUMMARY_LENGTH_MAP = {
@@ -22,28 +24,22 @@ SUMMARY_LENGTH_MAP = {
 
 def _summarize_one(args):
     text, length_params = args
-    headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
     payload = {
-        "inputs": f"summarize: {text}",
-        "parameters": {
-            "max_length": length_params["max_length"],
-            "min_length": length_params["min_length"],
-            "num_beams": 4,
-            "no_repeat_ngram_size": 2,
-        },
-        "options": {"wait_for_model": True},
+        "text": text,
+        "max_length": length_params["max_length"],
+        "min_length": length_params["min_length"],
+        "num_beams": 4,
+        "no_repeat_ngram_size": 2,
     }
     try:
-        response = requests.post(HF_MODEL_URL, headers=headers, json=payload)
+        response = requests.post(HF_SPACE_URL, json=payload, timeout=300)
         if response.status_code != 200:
-            logging.error(f"HF API error: {response.status_code} {response.text}")
+            logging.error(f"Space API error: {response.status_code} {response.text}")
             return "Summary unavailable."
         result = response.json()
-        logging.info(f"HF API response: {result}")
-        if isinstance(result, list) and len(result) > 0:
-            return result[0].get("summary_text") or result[0].get("generated_text") or "Summary unavailable."
+        return result.get("summary_text", "Summary unavailable.")
     except Exception as e:
-        logging.error(f"HF API request failed: {e}")
+        logging.error(f"Space API request failed: {e}")
     return "Summary unavailable."
 
 
