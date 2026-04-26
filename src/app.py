@@ -1,103 +1,55 @@
 from flask import Flask, request, jsonify, render_template
-from transformers import T5ForConditionalGeneration, T5Tokenizer
 import logging
+import os
+import requests
 from src.fetch_news import fetch_top_headlines
-import torch
-# Set threads for CPU-only environment
-torch.set_num_threads(1)
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 
-# --- 1. Initialize the Flask App ---
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
-
-# --- 2. "Lazy Load" Model Setup ---
-# Set model and tokenizer to None. They will be loaded on the first API call.
-MODEL_NAME = "VishalShaw/t5-small-finetuned-news"
-tokenizer = None
-model = None
-
-def load_model_and_tokenizer():
-    """
-    Loads the model and tokenizer into the global variables.
-    This is called by the first request to the /get-summarized-news endpoint.
-    """
-    global tokenizer, model
-
-    # This check ensures the model is only loaded ONCE
-    if model is None or tokenizer is None:
-        logging.info("LAZY LOADING: Model and tokenizer not found. Loading now...")
-        try:
-            tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
-            model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME, from_tf=True)
-            logging.info(f"Successfully loaded fine-tuned model from '{MODEL_NAME}'")
-        except Exception as e:
-            logging.error(f"Error loading model: {e}")
-            # If the model fails to load, we can't run.
-            # This error will be seen in the logs of the first request.
-            raise e
-    else:
-        logging.info("Model and tokenizer already loaded.")
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+HF_MODEL_URL = "https://api-inference.huggingface.co/models/VishalShaw/t5-small-finetuned-news"
 
 
-# --- 3. Create the Summary Generation Function ---
-def generate_summary(text_to_summarize):
-    """
-    Generates a summary for a given text using the fine-tuned model.
-    """
-    logging.info("Generating summary...")
+def generate_summary(texts):
+    headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
+    summaries = []
 
-    # Prepare the text (add the T5 prefix from training)
-    input_text = [f"summarize: {text}" for text in text_to_summarize]
+    for text in texts:
+        payload = {
+            "inputs": f"summarize: {text}",
+            "parameters": {
+                "max_length": 80,
+                "min_length": 30,
+                "num_beams": 4,
+                "no_repeat_ngram_size": 2,
+            },
+            "options": {"wait_for_model": True},
+        }
+        response = requests.post(HF_MODEL_URL, headers=headers, json=payload)
 
-    inputs = tokenizer(
-        input_text,
-        return_tensors='pt',
-        max_length=512,
-        truncation=True,
-        padding=True
-    )
+        if response.status_code != 200:
+            logging.error(f"HF API error: {response.status_code} {response.text}")
+            summaries.append("Summary unavailable.")
+            continue
 
-    # Generate summary IDs using the parameters from your tuning
-    summary_ids = model.generate(
-        inputs.input_ids,
-        attention_mask=inputs.attention_mask,
-        max_length=80,
-        min_length=30,
-        num_beams=4,
-        no_repeat_ngram_size=2,
-        early_stopping=True
-    )
+        result = response.json()
+        if isinstance(result, list) and len(result) > 0:
+            summaries.append(result[0].get("summary_text", "Summary unavailable."))
+        else:
+            summaries.append("Summary unavailable.")
 
-    summary = [tokenizer.decode(summary, skip_special_tokens=True) for summary in summary_ids]
-    logging.info("Summary generation complete.")
-    return summary
+    return summaries
 
 
-# --- 4. Define the Homepage Route ---
 @app.route("/")
 def home():
-    """
-    Serves the main index.html file.
-    """
     return render_template("index.html")
 
 
-# --- 5. Define the API Endpoint ---
 @app.route("/get-summarized-news", methods=["GET"])
 def summarize_endpoint():
-    """
-    API endpoint to fetch real time news, summarize, and return.
-    """
-
-    try:
-        load_model_and_tokenizer()
-    except Exception as e:
-        logging.error(f"Failed to load model on demand: {e}")
-        return jsonify({'error': 'Model failed to load, server is in a bad state.'}), 500
-
     topic = request.args.get("topic", "")
     language = request.args.get("language", "en")
     max_results = request.args.get("max_results", 10, type=int)
@@ -112,10 +64,10 @@ def summarize_endpoint():
     ]
 
     try:
-        summary = generate_summary(texts)
+        summaries = generate_summary(texts)
         output_data = []
         for i, article in enumerate(articles):
-            article['summary'] = summary[i]
+            article['summary'] = summaries[i]
             output_data.append(article)
         return jsonify(output_data)
     except Exception as e:
@@ -123,6 +75,5 @@ def summarize_endpoint():
         return jsonify({'error': 'Failed to process news!!'}), 500
 
 
-# --- 6. Run the App ---
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
