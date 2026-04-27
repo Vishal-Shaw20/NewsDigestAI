@@ -24,6 +24,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let sourceChart = null;
     let summaryLength = "medium";
+    let currentPage = 1;
+    let pageCache = {};
+    let currentSearchKey = "";
+    let prefetchVersion = 0;
+    const inFlightKeys = new Set();
+    const paginationContainer = document.getElementById("pagination-container");
 
     // --- Dark Mode ---
     function applyTheme(dark) {
@@ -47,12 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
             summaryLength = btn.dataset.length;
             document.querySelectorAll(".summary-len-btn").forEach(b => {
                 const isActive = b.dataset.length === summaryLength;
-                b.classList.toggle("bg-blue-600", isActive);
-                b.classList.toggle("text-white", isActive);
-                b.classList.toggle("bg-gray-50", !isActive);
-                b.classList.toggle("dark:bg-gray-700", !isActive);
-                b.classList.toggle("text-gray-600", !isActive);
-                b.classList.toggle("dark:text-gray-400", !isActive);
+                b.className = `summary-len-btn px-3 py-1.5 text-sm transition-colors ${isActive ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium" : "bg-white dark:bg-zinc-900 text-stone-500 dark:text-zinc-400 hover:bg-stone-50 dark:hover:bg-zinc-800"}`;
             });
         });
     });
@@ -80,9 +81,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         searchHistoryContainer.classList.remove("hidden");
         const chips = history.map(h =>
-            `<button class="history-chip px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">${escapeHTML(h)}</button>`
+            `<button class="history-chip px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-500 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-stone-200 dark:hover:bg-zinc-700 transition-colors">${escapeHTML(h)}</button>`
         ).join("");
-        searchHistoryContainer.innerHTML = `<span class="text-sm text-gray-500 dark:text-gray-400 self-center">Recent:</span>${chips}`;
+        searchHistoryContainer.innerHTML = `<span class="text-sm text-stone-400 dark:text-zinc-500 self-center">Recent:</span>${chips}`;
 
         searchHistoryContainer.querySelectorAll(".history-chip").forEach(chip => {
             chip.addEventListener("click", () => {
@@ -135,15 +136,15 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderBookmarksPanel() {
         const bookmarks = getBookmarks();
         if (bookmarks.length === 0) {
-            bookmarksList.innerHTML = `<p class="text-gray-500 dark:text-gray-400 text-center py-8">No saved articles yet</p>`;
+            bookmarksList.innerHTML = `<p class="text-stone-400 dark:text-zinc-500 text-center py-8">No saved articles yet</p>`;
             return;
         }
         bookmarksList.innerHTML = bookmarks.map(b => `
-            <div class="border-b border-gray-200 dark:border-gray-700 py-4 last:border-0">
-                <a href="${encodeURI(b.url)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 font-medium hover:underline">${escapeHTML(b.title)}</a>
-                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">${escapeHTML(b.source)} · ${timeAgo(b.savedAt)}</p>
-                <p class="text-gray-600 dark:text-gray-300 text-sm mt-2">${escapeHTML(b.summary || "")}</p>
-                <button onclick="window._removeBookmark('${encodeURI(b.url)}')" class="text-red-500 hover:text-red-700 text-sm mt-2">Remove</button>
+            <div class="border-b border-stone-100 dark:border-zinc-800 py-4 last:border-0">
+                <a href="${encodeURI(b.url)}" target="_blank" rel="noopener noreferrer" class="text-accent-600 dark:text-accent-400 font-medium hover:underline text-sm">${escapeHTML(b.title)}</a>
+                <p class="text-stone-400 dark:text-zinc-500 text-xs mt-1">${escapeHTML(b.source)} &middot; ${timeAgo(b.savedAt)}</p>
+                <p class="text-stone-500 dark:text-zinc-400 text-xs mt-1.5 leading-relaxed">${escapeHTML(b.summary || "")}</p>
+                <button onclick="window._removeBookmark('${encodeURI(b.url)}')" class="text-red-500 hover:text-red-700 text-xs mt-2 font-medium">Remove</button>
             </div>
         `).join("");
     }
@@ -170,6 +171,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const btn = e.target.closest("[data-topic]");
         if (!btn) return;
         topicInput.value = btn.dataset.topic;
+
+        document.querySelectorAll(".topic-pill").forEach(p => {
+            const match = p.dataset.topic === btn.dataset.topic;
+            p.className = `topic-pill px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${match ? "bg-accent-50 text-accent-700 dark:bg-accent-700/20 dark:text-accent-400 ring-1 ring-accent-200 dark:ring-accent-700/40" : "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700"}`;
+        });
+
         fetchNews();
     });
 
@@ -178,16 +185,120 @@ document.addEventListener("DOMContentLoaded", () => {
     topicInput.addEventListener("keydown", (e) => { if (e.key === "Enter") fetchNews(); });
     maxResultsInput.addEventListener("keydown", (e) => { if (e.key === "Enter") fetchNews(); });
 
-    async function fetchNews() {
+    async function fetchPageData(topic, language, maxResults, page) {
+        const baseURL = window.location.origin;
+        const url = `${baseURL}/get-summarized-news?topic=${encodeURIComponent(topic)}&language=${language}&max_results=${maxResults}&summary_length=${summaryLength}&page=${page}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("HTTP error, Status: " + response.status);
+        return response.json();
+    }
+
+    function getVisiblePages(current, totalPages) {
+        const delta = 2;
+        const pages = new Set([1]);
+        for (let i = Math.max(2, current - delta); i <= Math.min(totalPages - 1, current + delta); i++) {
+            pages.add(i);
+        }
+        if (totalPages > 1) pages.add(totalPages);
+        pages.delete(current);
+        return [...pages];
+    }
+
+    async function prefetchPages(topic, language, maxResults, fromPage, totalPages) {
+        const version = ++prefetchVersion;
+
+        const pagesToFetch = getVisiblePages(fromPage, totalPages)
+            .filter(p => !pageCache[`${currentSearchKey}|${p}`])
+            .sort((a, b) => Math.abs(a - fromPage) - Math.abs(b - fromPage));
+
+        const failedPages = [];
+
+        for (const targetPage of pagesToFetch) {
+            if (prefetchVersion !== version) return;
+
+            const cacheKey = `${currentSearchKey}|${targetPage}`;
+            if (pageCache[cacheKey] || inFlightKeys.has(cacheKey)) continue;
+
+            inFlightKeys.add(cacheKey);
+            try {
+                const data = await fetchPageData(topic, language, maxResults, targetPage);
+                pageCache[cacheKey] = data;
+            } catch (e) {
+                failedPages.push(targetPage);
+                continue;
+            } finally {
+                inFlightKeys.delete(cacheKey);
+            }
+        }
+
+        if (failedPages.length === 0 || prefetchVersion !== version) return;
+
+        await new Promise(r => setTimeout(r, 5000));
+
+        for (const targetPage of failedPages) {
+            if (prefetchVersion !== version) return;
+
+            const cacheKey = `${currentSearchKey}|${targetPage}`;
+            if (pageCache[cacheKey] || inFlightKeys.has(cacheKey)) continue;
+
+            inFlightKeys.add(cacheKey);
+            try {
+                const data = await fetchPageData(topic, language, maxResults, targetPage);
+                pageCache[cacheKey] = data;
+            } catch (e) {
+            } finally {
+                inFlightKeys.delete(cacheKey);
+            }
+        }
+    }
+
+    async function fetchNews(page = 1) {
+        currentPage = page;
         const topic = topicInput.value;
         const language = languageSelect.value;
         let max_results = parseInt(maxResultsInput.value) || 10;
         max_results = Math.max(1, Math.min(10, max_results));
 
-        addToSearchHistory(topic);
+        if (page === 1) addToSearchHistory(topic);
+
+        // Highlight active topic pill
+        document.querySelectorAll(".topic-pill").forEach(p => {
+            const match = p.dataset.topic.toLowerCase() === topic.toLowerCase();
+            p.className = `topic-pill px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${match ? "bg-accent-50 text-accent-700 dark:bg-accent-700/20 dark:text-accent-400 ring-1 ring-accent-200 dark:ring-accent-700/40" : "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700"}`;
+        });
+
+        const searchKey = `${topic}|${language}|${max_results}|${summaryLength}`;
+        if (searchKey !== currentSearchKey) {
+            pageCache = {};
+            currentSearchKey = searchKey;
+        }
+
+        const cacheKey = `${currentSearchKey}|${page}`;
+
+        if (pageCache[cacheKey]) {
+            const data = pageCache[cacheKey];
+            errorMessage.classList.add("hidden");
+
+            articleListContainer.style.opacity = "0";
+            chartContainer.style.opacity = "0";
+            paginationContainer.style.opacity = "0";
+
+            await new Promise(r => setTimeout(r, 150));
+
+            displayArticles(data.articles);
+            renderSourceChart(data.articles);
+            renderPagination(data.page, data.totalPages);
+
+            articleListContainer.style.opacity = "1";
+            chartContainer.style.opacity = "1";
+            paginationContainer.style.opacity = "1";
+
+            prefetchPages(topic, language, max_results, page, data.totalPages);
+            return;
+        }
 
         fetchButton.disabled = true;
-        fetchButton.classList.add("opacity-70", "cursor-not-allowed");
+        fetchButton.classList.add("opacity-60");
         searchIcon.classList.add("hidden");
         spinnerIcon.classList.remove("hidden");
         buttonText.textContent = "Summarizing...";
@@ -196,28 +307,27 @@ document.addEventListener("DOMContentLoaded", () => {
         errorMessage.classList.add("hidden");
         articleListContainer.innerHTML = "";
         chartContainer.classList.add("hidden");
+        paginationContainer.classList.add("hidden");
 
+        inFlightKeys.add(cacheKey);
         try {
-            const baseURL = window.location.origin;
-            const url = `${baseURL}/get-summarized-news?topic=${encodeURIComponent(topic)}&language=${language}&max_results=${max_results}&summary_length=${summaryLength}`;
-            const response = await fetch(url);
+            const data = await fetchPageData(topic, language, max_results, page);
+            pageCache[cacheKey] = data;
 
-            if(!response.ok) {
-                throw new Error("HTTP error, Status: " + response.status);
-            }
+            displayArticles(data.articles);
+            renderSourceChart(data.articles);
+            renderPagination(data.page, data.totalPages);
 
-            const articles = await response.json();
-
-            displayArticles(articles);
-            renderSourceChart(articles);
+            prefetchPages(topic, language, max_results, page, data.totalPages);
         } catch (error) {
             displayError(error.message);
         } finally {
+            inFlightKeys.delete(cacheKey);
             fetchButton.disabled = false;
-            fetchButton.classList.remove("opacity-70", "cursor-not-allowed");
+            fetchButton.classList.remove("opacity-60");
             searchIcon.classList.remove("hidden");
             spinnerIcon.classList.add("hidden");
-            buttonText.textContent = "Fetch & Summarize";
+            buttonText.textContent = "Summarize";
 
             skeletonLoader.classList.add("hidden");
         }
@@ -255,8 +365,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const labels = Object.keys(sourceCounts);
         const data = Object.values(sourceCounts);
         const colors = [
-            "#3b82f6", "#8b5cf6", "#ef4444", "#10b981", "#f59e0b",
-            "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1"
+            "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#ef4444",
+            "#ec4899", "#6366f1", "#84cc16", "#f97316", "#3b82f6"
         ];
 
         if (sourceChart) sourceChart.destroy();
@@ -272,7 +382,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     data: data,
                     backgroundColor: colors.slice(0, labels.length),
                     borderWidth: 2,
-                    borderColor: isDark ? "#1f2937" : "#ffffff"
+                    borderColor: isDark ? "#18181b" : "#ffffff"
                 }]
             },
             options: {
@@ -281,7 +391,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     legend: {
                         position: "bottom",
                         labels: {
-                            color: isDark ? "#d1d5db" : "#374151",
+                            color: isDark ? "#a1a1aa" : "#57534e",
                             padding: 16,
                             usePointStyle: true
                         }
@@ -291,12 +401,59 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function renderPagination(page, totalPages) {
+        paginationContainer.innerHTML = "";
+        if (totalPages <= 1) {
+            paginationContainer.classList.add("hidden");
+            return;
+        }
+        paginationContainer.classList.remove("hidden");
+
+        const buttons = [];
+
+        if (page > 1) {
+            buttons.push(`<button data-page="${page - 1}" class="px-3 py-2 rounded-lg text-sm font-medium text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors">&laquo; Prev</button>`);
+        }
+
+        const delta = 2;
+        const pages = [1];
+        const rangeStart = Math.max(2, page - delta);
+        const rangeEnd = Math.min(totalPages - 1, page + delta);
+
+        if (rangeStart > 2) pages.push("...");
+        for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
+        if (rangeEnd < totalPages - 1) pages.push("...");
+        if (totalPages > 1) pages.push(totalPages);
+
+        pages.forEach(p => {
+            if (p === "...") {
+                buttons.push(`<span class="px-2 py-2 text-sm text-stone-400 dark:text-zinc-600">&hellip;</span>`);
+            } else {
+                const isActive = p === page;
+                buttons.push(`<button data-page="${p}" class="w-10 h-10 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-accent-500 text-white' : 'text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800'}">${p}</button>`);
+            }
+        });
+
+        if (page < totalPages) {
+            buttons.push(`<button data-page="${page + 1}" class="px-3 py-2 rounded-lg text-sm font-medium text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors">Next &raquo;</button>`);
+        }
+
+        paginationContainer.innerHTML = buttons.join("");
+
+        paginationContainer.querySelectorAll("[data-page]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                fetchNews(parseInt(btn.dataset.page));
+                articleListContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+        });
+    }
+
     // --- Display Articles ---
     function displayArticles(articles) {
         articleListContainer.innerHTML = "";
 
         if(articles.length === 0) {
-            articleListContainer.innerHTML = "<p class='text-gray-600 dark:text-gray-400'>No articles found for this topic</p>";
+            articleListContainer.innerHTML = "<p class='text-stone-500 dark:text-zinc-400'>No articles found for this topic</p>";
             return;
         }
 
@@ -309,39 +466,55 @@ document.addEventListener("DOMContentLoaded", () => {
             const image = encodeURI(article.image || "");
             const publishedAt = article.publishedAt ? timeAgo(article.publishedAt) : "";
             const bookmarked = isBookmarked(article.url);
+            const isFeatured = index === 0;
 
-            const articleCardHTML = `
-            <div class="article-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform transition-transform hover:scale-105 flex flex-col" style="animation-delay: ${index * 0.1}s">
-                <a href="${url}" target="_blank" rel="noopener noreferrer">
-                    <img class="w-full object-cover h-48" src="${image}" alt="Article Image" onerror="this.style.display='none'">
-                </a>
-                <div class="p-6 flex flex-col flex-grow">
-                    <div class="flex items-start justify-between gap-2">
-                        <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">${title}</h3>
-                        <button class="bookmark-btn flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" data-index="${index}" aria-label="Bookmark">
-                            <svg class="w-5 h-5 ${bookmarked ? 'text-blue-600 fill-blue-600' : 'text-gray-400'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="${bookmarked ? 'currentColor' : 'none'}">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
-                            </svg>
-                        </button>
-                    </div>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-1">${sourceName}${publishedAt ? " · " + publishedAt : ""}</p>
-                    <div class="mt-2 mb-4">
-                        <div class="flex items-center gap-2 mb-2">
-                            <button class="compare-btn text-xs px-2 py-0.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" data-index="${index}">Show Original</button>
-                        </div>
-                        <p class="summary-text text-gray-700 dark:text-gray-300 text-base">
-                            <strong>Summary:</strong> ${summary}
-                        </p>
-                        <p class="original-text text-gray-700 dark:text-gray-300 text-base hidden">
-                            <strong>Original:</strong> ${description}
-                        </p>
-                    </div>
-                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium mt-auto pt-4 inline-block">
-                        Read Full Article &rarr;
-                    </a>
+            const articleCardHTML = isFeatured ? `
+            <div class="article-card md:col-span-2 lg:col-span-2 bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-2xl overflow-hidden flex flex-col md:flex-row" style="animation-delay: 0s">
+                <div class="md:w-2/5 overflow-hidden">
+                    <img class="w-full h-56 md:h-full object-cover" src="${image}" alt="" onerror="this.style.display='none'">
                 </div>
-            </div>
-            `;
+                <div class="p-6 md:p-8 flex flex-col flex-grow justify-between">
+                    <div>
+                        <p class="text-xs uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium mb-3">${sourceName}${publishedAt ? " &middot; " + publishedAt : ""}</p>
+                        <h3 class="font-display text-2xl font-bold text-stone-900 dark:text-white mb-3 leading-tight">${title}</h3>
+                        <div>
+                            <p class="summary-text text-stone-600 dark:text-zinc-400 leading-relaxed">${summary}</p>
+                            <p class="original-text text-stone-600 dark:text-zinc-400 leading-relaxed hidden">${description}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-6 pt-4 border-t border-stone-100 dark:border-zinc-800">
+                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-accent-600 dark:text-accent-400 hover:text-accent-700 dark:hover:text-accent-300 font-medium text-sm transition-colors">Read full article</a>
+                        <div class="flex items-center gap-3">
+                            <button class="compare-btn text-stone-400 dark:text-zinc-500 hover:text-stone-600 dark:hover:text-zinc-300 transition-colors text-xs underline underline-offset-2" data-index="${index}">Show original</button>
+                            <button class="bookmark-btn ${bookmarked ? 'text-accent-500' : 'text-stone-400 dark:text-zinc-500'} hover:text-accent-500 transition-colors" data-index="${index}" aria-label="Bookmark">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="${bookmarked ? 'currentColor' : 'none'}"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>` : `
+            <div class="article-card bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-2xl overflow-hidden flex flex-col" style="animation-delay: ${index * 0.1}s">
+                <div class="overflow-hidden">
+                    <img class="w-full h-48 object-cover" src="${image}" alt="" onerror="this.style.display='none'">
+                </div>
+                <div class="p-5 flex flex-col flex-grow">
+                    <p class="text-xs uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium mb-2">${sourceName}${publishedAt ? " &middot; " + publishedAt : ""}</p>
+                    <h3 class="font-display text-lg font-bold text-stone-900 dark:text-white mb-2 leading-snug">${title}</h3>
+                    <div class="flex-grow">
+                        <p class="summary-text text-stone-600 dark:text-zinc-400 text-sm leading-relaxed">${summary}</p>
+                        <p class="original-text text-stone-600 dark:text-zinc-400 text-sm leading-relaxed hidden">${description}</p>
+                    </div>
+                    <div class="flex items-center justify-between mt-4 pt-3 border-t border-stone-100 dark:border-zinc-800">
+                        <a href="${url}" target="_blank" rel="noopener noreferrer" class="text-accent-600 dark:text-accent-400 hover:text-accent-700 font-medium text-sm transition-colors">Read full article</a>
+                        <div class="flex items-center gap-3">
+                            <button class="compare-btn text-stone-400 dark:text-zinc-500 hover:text-stone-600 dark:hover:text-zinc-300 transition-colors text-xs underline underline-offset-2" data-index="${index}">Show original</button>
+                            <button class="bookmark-btn ${bookmarked ? 'text-accent-500' : 'text-stone-400 dark:text-zinc-500'} hover:text-accent-500 transition-colors" data-index="${index}" aria-label="Bookmark">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="${bookmarked ? 'currentColor' : 'none'}"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
             articleListContainer.insertAdjacentHTML("beforeend", articleCardHTML);
         });
 
@@ -352,10 +525,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 toggleBookmark(articles[idx]);
                 const svg = btn.querySelector("svg");
                 const nowBookmarked = isBookmarked(articles[idx].url);
-                svg.classList.toggle("text-blue-600", nowBookmarked);
-                svg.classList.toggle("fill-blue-600", nowBookmarked);
-                svg.classList.toggle("text-gray-400", !nowBookmarked);
                 svg.setAttribute("fill", nowBookmarked ? "currentColor" : "none");
+                btn.classList.toggle("text-accent-500", nowBookmarked);
+                btn.classList.toggle("text-stone-400", !nowBookmarked);
             });
         });
 
@@ -369,7 +541,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 summaryEl.classList.toggle("hidden", !showingOriginal);
                 originalEl.classList.toggle("hidden", showingOriginal);
-                btn.textContent = showingOriginal ? "Show Original" : "Show Summary";
+                btn.textContent = showingOriginal ? "Show original" : "Show summary";
             });
         });
     }

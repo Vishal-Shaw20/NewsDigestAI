@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 import logging
+import math
 import os
 import requests
 from src.fetch_news import fetch_top_headlines
@@ -57,8 +58,10 @@ def summarize_endpoint():
     summary_length = request.args.get("summary_length", "medium")
     if summary_length not in SUMMARY_LENGTH_MAP:
         summary_length = "medium"
+    page = request.args.get("page", 1, type=int)
+    page = max(1, page)
 
-    articles = fetch_top_headlines(topic, language, max_results)
+    articles, total_articles = fetch_top_headlines(topic, language, max_results, page)
 
     if not articles:
         return jsonify({'error': 'No text found!!'}), 404
@@ -73,7 +76,15 @@ def summarize_endpoint():
         for i, article in enumerate(articles):
             article['summary'] = summaries[i]
             output_data.append(article)
-        return jsonify(output_data)
+
+        total_pages = min(math.ceil(total_articles / max_results), 100)
+
+        return jsonify({
+            'articles': output_data,
+            'page': page,
+            'totalPages': total_pages,
+            'totalArticles': total_articles,
+        })
     except Exception as e:
         logging.error(f'Error in /get-summarized-news: {e}')
         return jsonify({'error': 'Failed to process news!!'}), 500

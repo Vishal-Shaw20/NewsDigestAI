@@ -20,6 +20,8 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="/static/style.css">
 
@@ -27,52 +29,64 @@
         tailwind.config = {
             darkMode: 'class',
             theme: {
-                extend:{
-                    fontFamily:{
-                        sans: ['Inter','sans-serif']
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Playfair Display', 'Georgia', 'serif']
+                    },
+                    colors: {
+                        accent: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            300: '#6ee7b7',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        }
                     }
                 }
             }
         }
     </script>
 </head>
-<body class="bg-gray-200 dark:bg-gray-900 font-sans antialiased flex flex-col min-h-screen transition-colors duration-300">
+<body class="font-sans antialiased flex flex-col min-h-screen transition-colors duration-300 bg-stone-50 dark:bg-zinc-950">
 
-    <!-- === SECTION 1: HEADER === -->
-    <header class="bg-gradient-to-r from-white via-blue-50 to-white dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 shadow-sm">
-        <nav class="container mx-auto px-6 py-4 flex items-center justify-between">
-            <div>
-                <h1 class="font-bold text-3xl text-gray-800 dark:text-white">NewsDigest AI</h1>
-                <p class="text-gray-600 dark:text-gray-400">Your Real-Time News Summarizer</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button id="bookmarks-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" aria-label="View reading list">
-                    <svg class="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <!-- === HEADER === -->
+    <header class="sticky top-0 z-40 border-b border-stone-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md">
+        <nav class="container mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
+            <h1 class="font-display text-2xl font-bold text-stone-900 dark:text-white tracking-tight">
+                NewsDigest<span class="text-accent-500">AI</span>
+            </h1>
+            <div class="flex items-center gap-1">
+                <button id="bookmarks-toggle" class="relative p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors" aria-label="View reading list">
+                    <svg class="w-5 h-5 text-stone-500 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
                     </svg>
-                    <span id="bookmark-count" class="hidden absolute -mt-8 ml-4 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                    <span id="bookmark-count" class="hidden absolute -top-0.5 -right-0.5 bg-accent-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
                 </button>
-                <button id="theme-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" aria-label="Toggle dark mode">
-                <svg id="sun-icon" class="w-6 h-6 text-yellow-500 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <svg id="moon-icon" class="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-            </button>
+                <button id="theme-toggle" class="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors" aria-label="Toggle dark mode">
+                    <svg id="sun-icon" class="w-5 h-5 text-amber-500 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <svg id="moon-icon" class="w-5 h-5 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
             </div>
         </nav>
     </header>
 
-    <!-- === READING LIST PANEL (hidden by default) === -->
+    <!-- === READING LIST PANEL === -->
     <div id="bookmarks-panel" class="hidden fixed inset-0 z-50">
-        <div class="absolute inset-0 bg-black/50" id="bookmarks-overlay"></div>
-        <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-gray-800 shadow-xl overflow-y-auto">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" id="bookmarks-overlay"></div>
+        <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-zinc-900 shadow-2xl overflow-y-auto">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Reading List</h2>
-                    <button id="bookmarks-close" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                        <svg class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <h2 class="font-display text-xl font-bold text-stone-900 dark:text-white">Reading List</h2>
+                    <button id="bookmarks-close" class="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors">
+                        <svg class="w-5 h-5 text-stone-500 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
@@ -82,149 +96,141 @@
         </div>
     </div>
 
-    <!-- === SECTION 2: CONTROLS === -->
-    <main class="container mx-auto px-6 pt-6 pb-12 flex-grow">
-        <!-- Hero Section -->
-        <div class="text-center mb-10">
-            <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2 drop-shadow-sm">
-                Real-Time AI News Summaries
-            </h1>
-            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Search any topic — get fresh articles + concise AI summaries in seconds.
-            </p>
+    <!-- === MAIN === -->
+    <main class="container mx-auto max-w-6xl px-6 pt-12 pb-16 flex-grow">
+
+        <!-- Search Hero -->
+        <div class="max-w-2xl mx-auto mb-10">
+            <div class="relative">
+                <input type="text" id="topic-input" placeholder="Search any topic..." class="w-full bg-white dark:bg-zinc-900 border border-stone-300 dark:border-zinc-700 rounded-2xl pl-5 pr-36 py-4 text-lg shadow-sm focus:ring-2 focus:ring-accent-500/40 focus:border-accent-500 outline-none transition text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-zinc-500">
+                <button id="fetch-button" class="absolute right-2 top-1/2 -translate-y-1/2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold px-6 py-2.5 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-100 active:scale-[0.97] transition-all text-sm flex items-center gap-2">
+                    <svg id="search-icon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                    <svg id="spinner-icon" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    <span id="button-text">Summarize</span>
+                </button>
+            </div>
+            <p class="text-center text-sm text-stone-400 dark:text-zinc-500 mt-3">Search any topic for AI-powered news summaries</p>
         </div>
 
         <!-- Quick Topic Buttons -->
         <div class="flex flex-wrap justify-center gap-2 mb-4" id="quick-topics">
-            <button data-topic="Technology" class="px-4 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">Technology</button>
-            <button data-topic="Sports" class="px-4 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 transition-colors">Sports</button>
-            <button data-topic="Business" class="px-4 py-1.5 rounded-full text-sm font-medium bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors">Business</button>
-            <button data-topic="Health" class="px-4 py-1.5 rounded-full text-sm font-medium bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 transition-colors">Health</button>
-            <button data-topic="Science" class="px-4 py-1.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors">Science</button>
-            <button data-topic="Entertainment" class="px-4 py-1.5 rounded-full text-sm font-medium bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300 hover:bg-pink-200 dark:hover:bg-pink-800 transition-colors">Entertainment</button>
+            <button data-topic="Technology" class="topic-pill px-4 py-1.5 rounded-full text-sm font-medium bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 transition-colors">Technology</button>
+            <button data-topic="Sports" class="topic-pill px-4 py-1.5 rounded-full text-sm font-medium bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 transition-colors">Sports</button>
+            <button data-topic="Business" class="topic-pill px-4 py-1.5 rounded-full text-sm font-medium bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 transition-colors">Business</button>
+            <button data-topic="Health" class="topic-pill px-4 py-1.5 rounded-full text-sm font-medium bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 transition-colors">Health</button>
+            <button data-topic="Science" class="topic-pill px-4 py-1.5 rounded-full text-sm font-medium bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 transition-colors">Science</button>
+            <button data-topic="Entertainment" class="topic-pill px-4 py-1.5 rounded-full text-sm font-medium bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-stone-200 dark:hover:bg-zinc-700 transition-colors">Entertainment</button>
         </div>
 
         <!-- Search History -->
-        <div id="search-history" class="flex flex-wrap justify-center gap-2 mb-6 hidden">
-            <span class="text-sm text-gray-500 dark:text-gray-400 self-center">Recent:</span>
+        <div id="search-history" class="flex flex-wrap justify-center gap-2 mb-4 hidden">
+            <span class="text-sm text-stone-400 dark:text-zinc-500 self-center">Recent:</span>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-
-                <!-- Topic Input -->
-                <div>
-                    <label for="topic-input" class=" pl-1 block text-sm font-medium text-gray-600 dark:text-gray-400">Topic</label>
-                    <input type="text" id="topic-input" placeholder="Technology" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 dark:text-white placeholder-gray-400">
-                </div>
-
-                <!-- Language Selector -->
-                <div>
-                    <label for="language-select" class="pl-1 block text-sm font-medium text-gray-600 dark:text-gray-400">Language</label>
-                    <select id="language-select" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 dark:text-white">
-                        <option value="en">English</option>
-                        <option value="hi">Hindi</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="de">German</option>
-                        <option value="pt">Portuguese</option>
-                        <option value="ar">Arabic</option>
-                        <option value="zh">Chinese</option>
-                        <option value="ja">Japanese</option>
-                    </select>
-                </div>
-
-                <!-- Max Results Input -->
-                <div>
-                    <label for="max-results-input" class="pl-1 block text-sm font-medium text-gray-600 dark:text-gray-400">Results</label>
-                    <input type="number" id="max-results-input" placeholder="10" min="1" max="10" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 dark:text-white placeholder-gray-400">
-                </div>
-
-                <!-- Summary Length -->
-                <div>
-                    <label class="pl-1 block text-sm font-medium text-gray-600 dark:text-gray-400">Summary</label>
-                    <div class="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm">
-                        <button data-length="short" class="summary-len-btn flex-1 py-2 text-sm font-medium bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Short</button>
-                        <button data-length="medium" class="summary-len-btn flex-1 py-2 text-sm font-medium bg-blue-600 text-white">Medium</button>
-                        <button data-length="long" class="summary-len-btn flex-1 py-2 text-sm font-medium bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Long</button>
-                    </div>
-                </div>
-
-                <!-- The Button -->
-                <div>
-                    <button id="fetch-button" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-2.5 px-4 rounded-xl shadow-lg hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] transition flex items-center justify-center gap-2">
-                        <!-- Search Icon SVG -->
-                        <svg id="search-icon" class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="white">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                        </svg>
-                        <!-- Spinner SVG (hidden by default) -->
-                        <svg id="spinner-icon" class="w-5 h-5 mr-2 animate-spin hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                        </svg>
-                        <span id="button-text">Fetch & Summarize</span>
-                    </button>
+        <!-- Secondary Controls -->
+        <div class="flex flex-wrap justify-center items-center gap-4 mb-12 text-sm">
+            <div class="flex items-center gap-2">
+                <label for="language-select" class="text-stone-500 dark:text-zinc-400">Language</label>
+                <select id="language-select" class="bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-stone-700 dark:text-zinc-300 text-sm outline-none focus:ring-2 focus:ring-accent-500/40">
+                    <option value="en">English</option>
+                    <option value="hi">Hindi</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ar">Arabic</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ja">Japanese</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <label for="max-results-input" class="text-stone-500 dark:text-zinc-400">Results</label>
+                <input type="number" id="max-results-input" placeholder="10" min="1" max="10" class="w-16 bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-stone-700 dark:text-zinc-300 text-sm outline-none focus:ring-2 focus:ring-accent-500/40">
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-stone-500 dark:text-zinc-400">Summary</label>
+                <div class="flex rounded-lg overflow-hidden border border-stone-200 dark:border-zinc-700">
+                    <button data-length="short" class="summary-len-btn px-3 py-1.5 text-sm bg-white dark:bg-zinc-900 text-stone-500 dark:text-zinc-400 hover:bg-stone-50 dark:hover:bg-zinc-800 transition-colors">Short</button>
+                    <button data-length="medium" class="summary-len-btn px-3 py-1.5 text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium">Medium</button>
+                    <button data-length="long" class="summary-len-btn px-3 py-1.5 text-sm bg-white dark:bg-zinc-900 text-stone-500 dark:text-zinc-400 hover:bg-stone-50 dark:hover:bg-zinc-800 transition-colors">Long</button>
                 </div>
             </div>
         </div>
 
-        <!-- === SECTION 3: STATUS AREA === -->
+        <!-- === STATUS AREA === -->
         <div id="status-container" class="text-center my-8" style="min-height: 40px;">
-            <!-- The Error Message (hidden by default) -->
-            <div id="error-message" class="hidden bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md">
-                <!--Error Message-->
+            <div id="error-message" class="hidden max-w-2xl mx-auto mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm"></div>
+        </div>
+
+        <!-- Skeleton Loader -->
+        <div id="skeleton-loader-container" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div class="md:col-span-2 lg:col-span-2 bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-2xl overflow-hidden flex flex-col md:flex-row">
+                <div class="md:w-2/5 h-56 md:h-auto skeleton-pulse"></div>
+                <div class="p-8 flex-grow space-y-4">
+                    <div class="h-3 w-24 skeleton-pulse rounded"></div>
+                    <div class="h-6 w-4/5 skeleton-pulse rounded"></div>
+                    <div class="h-6 w-3/5 skeleton-pulse rounded"></div>
+                    <div class="h-4 w-full skeleton-pulse rounded"></div>
+                    <div class="h-4 w-5/6 skeleton-pulse rounded"></div>
+                    <div class="h-4 w-2/3 skeleton-pulse rounded"></div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+                <div class="h-48 skeleton-pulse"></div>
+                <div class="p-5 space-y-3">
+                    <div class="h-3 w-20 skeleton-pulse rounded"></div>
+                    <div class="h-5 w-4/5 skeleton-pulse rounded"></div>
+                    <div class="h-4 w-full skeleton-pulse rounded"></div>
+                    <div class="h-4 w-3/4 skeleton-pulse rounded"></div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+                <div class="h-48 skeleton-pulse"></div>
+                <div class="p-5 space-y-3">
+                    <div class="h-3 w-20 skeleton-pulse rounded"></div>
+                    <div class="h-5 w-4/5 skeleton-pulse rounded"></div>
+                    <div class="h-4 w-full skeleton-pulse rounded"></div>
+                    <div class="h-4 w-3/4 skeleton-pulse rounded"></div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+                <div class="h-48 skeleton-pulse"></div>
+                <div class="p-5 space-y-3">
+                    <div class="h-3 w-20 skeleton-pulse rounded"></div>
+                    <div class="h-5 w-4/5 skeleton-pulse rounded"></div>
+                    <div class="h-4 w-full skeleton-pulse rounded"></div>
+                    <div class="h-4 w-3/4 skeleton-pulse rounded"></div>
+                </div>
             </div>
         </div>
 
-        <div id="skeleton-loader-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto hidden">
-            <!-- Repeat skeleton cards -->
-            <div class="animate-pulse bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <div class="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-                <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
-                <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-full mb-2"></div>
-                <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-5/6"></div>
-                <div class="h-48 bg-gray-300 dark:bg-gray-700 rounded mt-4"></div>
-            </div>
-            <div class="animate-pulse bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <div class="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-                <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
-                <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-full mb-2"></div>
-                <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-5/6"></div>
-                <div class="h-48 bg-gray-300 dark:bg-gray-700 rounded mt-4"></div>
-            </div>
-            <div class="animate-pulse bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <div class="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-                <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
-                <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-full mb-2"></div>
-                <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-5/6"></div>
-                <div class="h-48 bg-gray-300 dark:bg-gray-700 rounded mt-4"></div>
-            </div>
-        </div>
-
-        <!-- === SECTION 4: SOURCE CHART === -->
-        <div id="chart-container" class="hidden max-w-md mx-auto mb-10">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 text-center">Source Distribution</h3>
-                <canvas id="source-chart"></canvas>
-            </div>
-        </div>
-
-        <!-- === SECTION 5: ARTICLE LIST === -->
-        <div id="article-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto">
+        <!-- === ARTICLE LIST === -->
+        <div id="article-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto scroll-mt-20">
             <!-- Empty State -->
-            <div id="empty-state" class="col-span-full text-center py-16">
-                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <div id="empty-state" class="col-span-full text-center py-20">
+                <svg class="w-12 h-12 mx-auto mb-4 text-stone-300 dark:text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6V7.5Z" />
                 </svg>
-                <p class="text-xl font-medium text-gray-400 dark:text-gray-500">Search a topic or click a category to get started</p>
+                <p class="text-stone-400 dark:text-zinc-600 font-medium">Search a topic or click a category to get started</p>
+            </div>
+        </div>
+
+        <!-- === PAGINATION === -->
+        <div id="pagination-container" class="hidden flex justify-center items-center gap-1 mt-8 max-w-6xl mx-auto"></div>
+
+        <!-- === SOURCE CHART === -->
+        <div id="chart-container" class="hidden max-w-md mx-auto mt-10">
+            <div class="bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-stone-700 dark:text-zinc-300 mb-4 text-center">Source Distribution</h3>
+                <canvas id="source-chart"></canvas>
             </div>
         </div>
     </main>
 
-    <!-- === SECTION 5: FOOTER === -->
-    <footer class="bg-gray-800 dark:bg-gray-950 text-gray-400 py-8 mt-20">
-        <div class="container mx-auto px-6 text-center">
-            <p class="text-sm tracking-wide">&copy; 2025 <span class="font-semibold text-white">NewsDigest AI</span> • Built by Vishal Shaw</p>
+    <!-- === FOOTER === -->
+    <footer class="border-t border-stone-200 dark:border-zinc-800 bg-stone-50 dark:bg-zinc-950 py-8">
+        <div class="container mx-auto max-w-6xl px-6 text-center">
+            <p class="text-sm text-stone-400 dark:text-zinc-500">&copy; 2025 <span class="font-medium text-stone-600 dark:text-zinc-400">NewsDigest AI</span> &middot; Built by Vishal Shaw</p>
         </div>
     </footer>
 
