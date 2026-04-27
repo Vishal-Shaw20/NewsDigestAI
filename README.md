@@ -10,6 +10,8 @@ Real-time news summarization web application powered by a fine-tuned T5 Transfor
 
 - Fetches live news using the GNews API
 - Generates concise summaries using a fine-tuned T5-small model
+- Paginated results with client-side caching and smooth page transitions
+- Background prefetching of visible pages for instant navigation
 - Dark mode with system preference detection
 - Adjustable summary length (short / medium / long)
 - Bookmarks with reading list panel (localStorage)
