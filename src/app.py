@@ -11,8 +11,8 @@ app = Flask(__name__, static_folder='static', template_folder='templates')
 
 HF_SPACE_URL = os.getenv(
     "HF_SPACE_URL",
-    "https://vishalshaw-t5-news-summarizer.hf.space",
-)
+    "https://vishalshaw-ml-space.hf.space",
+).rstrip("/")
 
 
 SUMMARY_LENGTH_MAP = {
